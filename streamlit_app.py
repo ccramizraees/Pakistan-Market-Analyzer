@@ -5,12 +5,30 @@ Modern SaaS-style interface for comparing prices across Pakistani marketplaces.
 import streamlit as st
 import asyncio
 import os
+import sys
+import subprocess
 from datetime import datetime
 import pandas as pd
 from pathlib import Path
 import json
 from rich.console import Console
 import plotly.express as px
+
+# Install Playwright browsers on first run (for Streamlit Cloud)
+@st.cache_resource
+def install_playwright():
+    """Install Playwright browsers on first run"""
+    try:
+        subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], 
+                      check=True, capture_output=True)
+        return True
+    except Exception as e:
+        st.warning(f"Could not install Playwright browsers: {e}")
+        return False
+
+# Install on app start
+install_playwright()
+
 from src.crew.crew import run_clean_marketplace_analysis
 
 # Page config
