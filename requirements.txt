@@ -1,4 +1,6 @@
-playwright==1.48.0
+# Playwright disabled for Railway - causes build issues
+# Install locally for full Daraz scraping: pip install playwright && playwright install chromium
+# playwright==1.48.0
 crewai[tools]
 groq
 python-dotenv
