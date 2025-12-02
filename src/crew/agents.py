@@ -415,7 +415,10 @@ class AgentB_SerperSearch(Agent):
             f"{product_name} site:olx.com.pk",
             f"{product_name} site:telemart.pk",
             f"{product_name} site:shophive.pk",
-            f"{product_name} price Pakistan buy online"
+            f"{product_name} site:daraz.pk",  # Include Daraz via search
+            f"{product_name} price Pakistan buy online",
+            f"buy {product_name} Pakistan online",
+            f"{product_name} Pakistan price comparison"
         ]
         
         all_results = []
@@ -424,7 +427,7 @@ class AgentB_SerperSearch(Agent):
             try:
                 payload = {
                     "q": query,
-                    "num": 5,
+                    "num": 10,  # Increased from 5 to 10 per query
                     "hl": "en",
                     "gl": "pk"  # Pakistan geo-location
                 }

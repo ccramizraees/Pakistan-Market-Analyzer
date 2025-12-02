@@ -77,20 +77,21 @@ class CleanMarketplaceAnalysisCrew:
     def _execute_clean_tasks_manually(self, query: str, query_id: str, **kwargs) -> Dict[str, Any]:
         results = {}
         
-        # TASK A: Daraz Scraping (Agent A)
+        # TASK A: Daraz Scraping (Agent A) - OPTIONAL (may fail on cloud)
         logger.info("📋 CLEAN Task A: Scraping Daraz with Playwright...")
         try:
             daraz_result = self.agents['agent_a_daraz'].scrape_daraz_product_sync(
                 query=query,
                 index=kwargs.get('index', 0),
-                headless=kwargs.get('headless', False),
+                headless=kwargs.get('headless', True),  # Always headless on cloud
                 timeout=kwargs.get('timeout', 30000)
             )
             results['task_a_daraz'] = daraz_result
             logger.info(f"✅ Task A completed: {daraz_result.get('status', 'unknown')}")
         except Exception as e:
-            logger.error(f"❌ Task A failed: {e}")
-            results['task_a_daraz'] = {"error": str(e), "status": "failed"}
+            logger.warning(f"⚠️ Task A (Daraz) skipped: {e}")
+            # Continue without Daraz - not critical
+            results['task_a_daraz'] = {"error": str(e), "status": "skipped"}
         
         logger.info("📋 CLEAN Task B: Searching + Processing via Serper.dev...")
         try:
@@ -98,10 +99,10 @@ class CleanMarketplaceAnalysisCrew:
             search_query = query
             logger.info(f"🔍 Using original search query: {search_query}")
             
-            # Agent B now does both search AND processing
+            # Agent B now does both search AND processing - INCREASE max_results
             processed_result = self.agents['agent_b_serper'].search_pakistani_sites(
                 product_name=search_query,
-                max_results=kwargs.get('max_results', 10)
+                max_results=kwargs.get('max_results', 20)  # Increased from 10 to 20
             )
             results['task_b_processed'] = processed_result
             
@@ -115,8 +116,8 @@ class CleanMarketplaceAnalysisCrew:
         logger.info("📋 CLEAN Task D: Generating comprehensive report...")
         try:
             report_result = self.agents['agent_d_report'].generate_final_report(
-                daraz_data=results['task_a_daraz'],
-                serper_data=results['task_b_processed'],  # Direct processed data from Agent B
+                daraz_data=results.get('task_a_daraz', {}),
+                serper_data=results.get('task_b_processed', {}),  # Direct processed data from Agent B
                 query=query
             )
             results['task_d_report'] = report_result
