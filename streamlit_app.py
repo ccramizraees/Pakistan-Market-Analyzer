@@ -207,6 +207,11 @@ def display_price_comparison(results):
     
     results_data = results.get('results', {})
     
+    # DEBUG: Log what we received
+    st.write("🔍 DEBUG - Results Data Keys:", list(results_data.keys()))
+    st.write("🔍 DEBUG - Total Products:", results_data.get('total_products_found', 0))
+    st.write("🔍 DEBUG - Marketplace Products Count:", len(results_data.get('marketplace_products', [])))
+    
     # Summary metrics in a row with better styling
     st.subheader("📊 Analysis Summary")
     col1, col2, col3, col4 = st.columns(4)
@@ -305,6 +310,11 @@ def display_price_comparison(results):
     st.subheader("💰 Price Comparison Across Platforms")
     cheapest_options = results_data.get('cheapest_options', [])
     marketplace_products = results_data.get('marketplace_products', [])
+    
+    # DEBUG: Show what marketplace products we got
+    st.write("🔍 DEBUG - Marketplace Products:")
+    for i, p in enumerate(marketplace_products[:5]):  # Show first 5
+        st.write(f"{i+1}. {p.get('platform', 'Unknown')} - {p.get('title', 'No title')[:50]} - Price: {p.get('price_numeric', 'N/A')}")
     
     # Combine all products for display
     all_products = []
