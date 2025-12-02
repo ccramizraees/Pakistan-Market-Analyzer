@@ -434,74 +434,74 @@ class AgentB_SerperSearch(Agent):
             all_results = []
             
             for query in search_queries:
-            try:
-                payload = {
-                    "q": query,
-                    "num": 10,  # Increased from 5 to 10 per query
-                    "hl": "en",
-                    "gl": "pk"  # Pakistan geo-location
-                }
-                
-                logger.info(f"📡 Agent B: Serper query: {query[:50]}...")
-                response = requests.post(
-                    f"{base_url}/search",
-                    headers=headers,
-                    json=payload,
-                    timeout=30
-                )
-                
-                logger.info(f"📡 Agent B: Serper response status: {response.status_code}")
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    organic_results = data.get('organic', [])
+                try:
+                    payload = {
+                        "q": query,
+                        "num": 10,  # Increased from 5 to 10 per query
+                        "hl": "en",
+                        "gl": "pk"  # Pakistan geo-location
+                    }
                     
-                    logger.info(f"📊 Agent B: Got {len(organic_results)} results for query")
+                    logger.info(f"📡 Agent B: Serper query: {query[:50]}...")
+                    response = requests.post(
+                        f"{base_url}/search",
+                        headers=headers,
+                        json=payload,
+                        timeout=30
+                    )
                     
-                    for result in organic_results:
-                        # Process ALL results, not just Pakistani e-commerce
-                        link = result.get('link', '')
+                    logger.info(f"📡 Agent B: Serper response status: {response.status_code}")
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        organic_results = data.get('organic', [])
                         
-                        # Process if it's from Pakistani domains OR contains Pakistan-related keywords
-                        is_pakistani = any(site in link.lower() for site in [
-                            'daraz.pk', 'priceoye.pk', 'olx.com.pk', 'telemart.pk', 
-                            'shophive.pk', 'homeshopping.pk', 'symbios.pk', 'goto.com.pk',
-                            'yayvo.com', 'mega.pk'
-                        ])
+                        logger.info(f"📊 Agent B: Got {len(organic_results)} results for query")
                         
-                        # Also check if Pakistan is mentioned
-                        snippet = result.get('snippet', '').lower()
-                        title = result.get('title', '').lower()
-                        has_pakistan = 'pakistan' in snippet or 'pakistan' in title or '.pk' in link
-                        
-                        if is_pakistani or has_pakistan:
-                            processed_product = self._process_search_result(result)
-                            if processed_product:
-                                all_results.append(processed_product)
-                                logger.info(f"✅ Agent B: Added result from {processed_product.get('platform', 'unknown')}")
-                else:
-                    logger.error(f"❌ Agent B: Serper API returned status {response.status_code}: {response.text[:200]}")
+                        for result in organic_results:
+                            # Process ALL results, not just Pakistani e-commerce
+                            link = result.get('link', '')
+                            
+                            # Process if it's from Pakistani domains OR contains Pakistan-related keywords
+                            is_pakistani = any(site in link.lower() for site in [
+                                'daraz.pk', 'priceoye.pk', 'olx.com.pk', 'telemart.pk', 
+                                'shophive.pk', 'homeshopping.pk', 'symbios.pk', 'goto.com.pk',
+                                'yayvo.com', 'mega.pk'
+                            ])
+                            
+                            # Also check if Pakistan is mentioned
+                            snippet = result.get('snippet', '').lower()
+                            title = result.get('title', '').lower()
+                            has_pakistan = 'pakistan' in snippet or 'pakistan' in title or '.pk' in link
+                            
+                            if is_pakistani or has_pakistan:
+                                processed_product = self._process_search_result(result)
+                                if processed_product:
+                                    all_results.append(processed_product)
+                                    logger.info(f"✅ Agent B: Added result from {processed_product.get('platform', 'unknown')}")
+                    else:
+                        logger.error(f"❌ Agent B: Serper API returned status {response.status_code}: {response.text[:200]}")
+                    
+                    # Small delay between queries
+                    time.sleep(0.5)
                 
-                # Small delay between queries
-                time.sleep(0.5)
-                
-            except Exception as e:
-                logger.error(f"❌ Agent B: Query failed: {e}")
-                continue
+                except Exception as e:
+                    logger.error(f"❌ Agent B: Query failed: {e}")
+                    continue
         
-        # Remove duplicates
-        unique_results = []
-        seen_urls = set()
-        
-        for result in all_results:
-            url = result.get('url', '')
-            if url and url not in seen_urls:
-                seen_urls.add(url)
-                unique_results.append(result)
-        
-        logger.info(f"✅ Agent B: Found {len(unique_results)} unique results from Pakistani sites")
-        logger.info(f"📊 Agent B: {sum(1 for r in unique_results if r.get('price_numeric'))} results have prices")
-        
+            # Remove duplicates
+            unique_results = []
+            seen_urls = set()
+            
+            for result in all_results:
+                url = result.get('url', '')
+                if url and url not in seen_urls:
+                    seen_urls.add(url)
+                    unique_results.append(result)
+            
+            logger.info(f"✅ Agent B: Found {len(unique_results)} unique results from Pakistani sites")
+            logger.info(f"📊 Agent B: {sum(1 for r in unique_results if r.get('price_numeric'))} results have prices")
+            
             return {
                 "status": "success",
                 "results": unique_results,
