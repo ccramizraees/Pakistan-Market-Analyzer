@@ -514,12 +514,23 @@ def check_api_configuration():
     """Check if required API keys are configured."""
     issues = []
     
+    def get_key(key_name):
+        """Check both environment and Streamlit secrets"""
+        if os.getenv(key_name):
+            return True
+        try:
+            if hasattr(st, 'secrets') and key_name in st.secrets:
+                return True
+        except:
+            pass
+        return False
+    
     # Check Serper API
-    if not os.getenv("SERPER_API_KEY"):
+    if not get_key("SERPER_API_KEY"):
         issues.append("🔑 SERPER_API_KEY not found - Marketplace search will be limited")
     
     # Check Groq API (if used)
-    if not os.getenv("GROQ_API_KEY"):
+    if not get_key("GROQ_API_KEY"):
         issues.append("🤖 GROQ_API_KEY not found - AI analysis features may be limited")
     
     return issues
