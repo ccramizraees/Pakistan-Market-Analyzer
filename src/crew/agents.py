@@ -12,16 +12,9 @@ from urllib.parse import quote_plus
 
 from crewai import Agent
 from groq import Groq
+from playwright.async_api import async_playwright
 from dotenv import load_dotenv
 import os
-
-# Try to import Playwright (optional for Railway deployment)
-try:
-    from playwright.async_api import async_playwright
-    PLAYWRIGHT_AVAILABLE = True
-except ImportError:
-    PLAYWRIGHT_AVAILABLE = False
-    logging.warning("⚠️ Playwright not available - Daraz scraping will be disabled")
 
 # Windows asyncio policy fix
 if platform.system() == "Windows":
@@ -162,10 +155,6 @@ class AgentA_DarazScraper(Agent):
         """
         MANDATORY: Extract product data from Daraz.pk and return structured JSON
         """
-        if not PLAYWRIGHT_AVAILABLE:
-            logger.warning("⚠️ Playwright not available - skipping Daraz scraping")
-            return {"error": "Playwright not installed", "status": "skipped"}
-        
         async with async_playwright() as p:
             browser = await p.chromium.launch(
                 headless=headless,
