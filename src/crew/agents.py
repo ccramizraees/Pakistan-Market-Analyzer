@@ -536,7 +536,6 @@ class AgentB_SerperSearch(Agent):
                 r'(\d+(?:,\d{3})*)\s*(?:Rs|PKR)',         # 50,000 Rs
                 r'Price:\s*Rs\.?\s*(\d+(?:,\d{3})*)',     # Price: Rs. 50,000
                 r'₨\s*(\d+(?:,\d{3})*)',                  # ₨ 50,000
-                r'(\d{1,3}(?:,\d{3})+)',                  # Any comma-separated number (50,000)
             ]
             
             price_numeric = None
@@ -549,8 +548,9 @@ class AgentB_SerperSearch(Agent):
                     try:
                         price_str = match.group(1).replace(',', '').replace('.00', '')
                         price_numeric = int(float(price_str))
-                        # Validate price is reasonable (between 100 and 10,000,000 PKR)
-                        if 100 <= price_numeric <= 10000000:
+                        
+                        # Smart price validation based on product category
+                        if self._is_valid_price_for_product(title, price_numeric):
                             price_text = f"Rs. {price_numeric:,}"
                             break
                         else:
@@ -568,7 +568,7 @@ class AgentB_SerperSearch(Agent):
                 "currency": "PKR",
                 "platform": platform,
                 "url": link,
-                "availability": "unknown",  # Would need page scraping to determine
+                "availability": "unknown",
                 "seller": "unknown",
                 "specifications": [],
                 "confidence": 0.8 if price_numeric else 0.5
@@ -577,6 +577,80 @@ class AgentB_SerperSearch(Agent):
         except Exception as e:
             logger.error(f"Error processing result: {e}")
             return None
+    
+    def _is_valid_price_for_product(self, title: str, price: int) -> bool:
+        """
+        Validate price based on product category to filter out unrealistic prices
+        """
+        title_lower = title.lower()
+        
+        # Electronics categories with realistic price ranges
+        price_ranges = {
+            # Smartphones
+            'iphone': (50000, 500000),
+            'samsung': (15000, 400000),
+            'xiaomi': (15000, 150000),
+            'redmi': (15000, 100000),
+            'oppo': (15000, 150000),
+            'vivo': (15000, 150000),
+            'realme': (15000, 100000),
+            'oneplus': (40000, 200000),
+            'huawei': (20000, 200000),
+            'phone': (10000, 500000),
+            'mobile': (10000, 500000),
+            
+            # Laptops
+            'laptop': (30000, 1000000),
+            'macbook': (150000, 1000000),
+            'dell': (30000, 500000),
+            'hp': (30000, 500000),
+            'lenovo': (30000, 500000),
+            'asus': (30000, 500000),
+            
+            # Tablets
+            'ipad': (50000, 500000),
+            'tablet': (15000, 300000),
+            
+            # Watches
+            'watch': (2000, 500000),
+            'apple watch': (50000, 300000),
+            
+            # Audio
+            'airpods': (5000, 100000),
+            'earbuds': (1000, 100000),
+            'headphones': (1000, 100000),
+            'speaker': (2000, 200000),
+            
+            # Gaming
+            'playstation': (50000, 300000),
+            'ps5': (100000, 300000),
+            'ps4': (30000, 150000),
+            'xbox': (50000, 300000),
+            
+            # Accessories
+            'charger': (500, 20000),
+            'cable': (200, 10000),
+            'case': (300, 20000),
+            'cover': (300, 20000),
+            'protector': (200, 5000),
+        }
+        
+        # Check which category matches
+        for keyword, (min_price, max_price) in price_ranges.items():
+            if keyword in title_lower:
+                if min_price <= price <= max_price:
+                    return True
+                else:
+                    logger.info(f"🚫 Rejected price {price} for '{title}' (expected {min_price}-{max_price})")
+                    return False
+        
+        # Default range for unknown products
+        if 1000 <= price <= 1000000:
+            return True
+        
+        logger.info(f"🚫 Rejected unrealistic price {price} for '{title}'")
+        return False
+
     
     def _extract_domain(self, url: str) -> str:
         """Extract domain from URL"""

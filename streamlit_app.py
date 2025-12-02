@@ -206,23 +206,6 @@ def display_price_comparison(results):
         return
     
     results_data = results.get('results', {})
-    
-    # DEBUG: Log what we received
-    st.write("🔍 DEBUG - Results Data Keys:", list(results_data.keys()))
-    st.write("🔍 DEBUG - Total Products:", results_data.get('total_products_found', 0))
-    st.write("🔍 DEBUG - Marketplace Products Count:", len(results_data.get('marketplace_products', [])))
-    
-    # Check if there were any errors
-    if results.get('error'):
-        st.error(f"❌ Error during search: {results.get('error')}")
-    
-    # Check raw results for debugging
-    if 'raw_results' in results:
-        raw = results['raw_results']
-        if isinstance(raw, dict):
-            for key, value in raw.items():
-                if isinstance(value, dict) and value.get('error'):
-                    st.warning(f"⚠️ {key}: {value.get('error')}")
 
     
     # Summary metrics in a row with better styling
@@ -323,11 +306,6 @@ def display_price_comparison(results):
     st.subheader("💰 Price Comparison Across Platforms")
     cheapest_options = results_data.get('cheapest_options', [])
     marketplace_products = results_data.get('marketplace_products', [])
-    
-    # DEBUG: Show what marketplace products we got
-    st.write("🔍 DEBUG - Marketplace Products:")
-    for i, p in enumerate(marketplace_products[:5]):  # Show first 5
-        st.write(f"{i+1}. {p.get('platform', 'Unknown')} - {p.get('title', 'No title')[:50]} - Price: {p.get('price_numeric', 'N/A')}")
     
     # Combine all products for display
     all_products = []
