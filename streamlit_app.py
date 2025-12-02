@@ -548,14 +548,8 @@ def check_api_configuration():
 
 def main():
     """Main Streamlit app."""
-    # Check API configuration
-    api_issues = check_api_configuration()
-    if api_issues:
-        with st.sidebar:
-            st.warning("⚠️ **API Configuration Issues:**")
-            for issue in api_issues:
-                st.write(f"• {issue}")
-            st.write("Add missing API keys to your `.env` file for full functionality.")
+    # API keys are loaded at import time, no need to show warnings
+    # The agents will handle validation when actually needed
     
     # Sidebar
     with st.sidebar:
