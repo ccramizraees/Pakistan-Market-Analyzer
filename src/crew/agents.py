@@ -379,11 +379,7 @@ class AgentB_SerperSearch(Agent):
     """
     
     def __init__(self):
-        # Check API key before initialization (with Streamlit secrets fallback)
-        api_key = get_api_key("SERPER_API_KEY")
-        if not api_key:
-            raise ValueError("SERPER_API_KEY not found in environment variables or Streamlit secrets")
-            
+        # Don't check API key at init - will check when actually needed
         super().__init__(
             role="Pakistani E-commerce Site Search Agent",
             goal="Search Pakistani e-commerce sites using Serper.dev API for product comparison",
@@ -393,14 +389,6 @@ class AgentB_SerperSearch(Agent):
             verbose=True,
             allow_delegation=False
         )
-        
-        # Store configuration as class variables (not instance attributes)
-        AgentB_SerperSearch._api_key = api_key
-        AgentB_SerperSearch._base_url = "https://google.serper.dev"
-        AgentB_SerperSearch._headers = {
-            "X-API-KEY": api_key,
-            "Content-Type": "application/json"
-        }
     
     @handle_agent_errors
     def search_pakistani_sites(self, product_name: str, max_results: int = 10) -> dict:
@@ -409,6 +397,17 @@ class AgentB_SerperSearch(Agent):
         Returns processed results directly (NO Agent C needed)
         """
         logger.info(f"🔍 Agent B: Searching Pakistani sites for: {product_name}")
+        
+        # Get API key when actually needed (lazy loading)
+        api_key = get_api_key("SERPER_API_KEY")
+        if not api_key:
+            raise ValueError("SERPER_API_KEY not found in environment variables or Streamlit secrets")
+        
+        base_url = "https://google.serper.dev"
+        headers = {
+            "X-API-KEY": api_key,
+            "Content-Type": "application/json"
+        }
         
         # Construct targeted search queries for Pakistani sites
         search_queries = [
@@ -432,8 +431,8 @@ class AgentB_SerperSearch(Agent):
                 
                 logger.info(f"📡 Agent B: Serper query: {query[:50]}...")
                 response = requests.post(
-                    f"{AgentB_SerperSearch._base_url}/search",
-                    headers=AgentB_SerperSearch._headers,
+                    f"{base_url}/search",
+                    headers=headers,
                     json=payload,
                     timeout=30
                 )
