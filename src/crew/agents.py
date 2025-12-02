@@ -441,16 +441,28 @@ class AgentB_SerperSearch(Agent):
                     data = response.json()
                     organic_results = data.get('organic', [])
                     
+                    logger.info(f"📊 Agent B: Got {len(organic_results)} results for query")
+                    
                     for result in organic_results:
-                        # Filter for Pakistani e-commerce sites
+                        # Process ALL results, not just Pakistani e-commerce
                         link = result.get('link', '')
-                        # Include all Pakistani sites, skip Daraz only
-                        if 'daraz.pk' not in link.lower():
-                            # Process all results that match Pakistani domains
-                            if any(site in link.lower() for site in ['priceoye.pk', 'olx.com.pk', 'telemart.pk', 'shophive.pk', 'homeshopping.pk', 'symbios.pk']):
-                                processed_product = self._process_search_result(result)
-                                if processed_product:
-                                    all_results.append(processed_product)
+                        
+                        # Process if it's from Pakistani domains OR contains Pakistan-related keywords
+                        is_pakistani = any(site in link.lower() for site in [
+                            'daraz.pk', 'priceoye.pk', 'olx.com.pk', 'telemart.pk', 
+                            'shophive.pk', 'homeshopping.pk', 'symbios.pk', 'goto.com.pk',
+                            'yayvo.com', 'mega.pk'
+                        ])
+                        
+                        # Also check if Pakistan is mentioned
+                        snippet = result.get('snippet', '').lower()
+                        title = result.get('title', '').lower()
+                        has_pakistan = 'pakistan' in snippet or 'pakistan' in title or '.pk' in link
+                        
+                        if is_pakistani or has_pakistan:
+                            processed_product = self._process_search_result(result)
+                            if processed_product:
+                                all_results.append(processed_product)
                 
                 # Small delay between queries
                 time.sleep(0.5)
@@ -470,6 +482,7 @@ class AgentB_SerperSearch(Agent):
                 unique_results.append(result)
         
         logger.info(f"✅ Agent B: Found {len(unique_results)} unique results from Pakistani sites")
+        logger.info(f"📊 Agent B: {sum(1 for r in unique_results if r.get('price_numeric'))} results have prices")
         
         return {
             "status": "success",
@@ -487,13 +500,15 @@ class AgentB_SerperSearch(Agent):
             link = result.get('link', '')
             snippet = result.get('snippet', '')
             
-            # Extract price from title or snippet using regex
+            # Extract price from title or snippet using regex - MORE PATTERNS
             import re
             price_patterns = [
-                r'Rs\.?\s*(\d+(?:,\d{3})*)',  # Rs. 50,000
-                r'PKR\.?\s*(\d+(?:,\d{3})*)', # PKR 50,000
-                r'(\d+(?:,\d{3})*)\s*PKR',    # 50,000 PKR
-                r'Price:\s*Rs\.?\s*(\d+(?:,\d{3})*)', # Price: Rs. 50,000
+                r'Rs\.?\s*(\d+(?:,\d{3})*(?:\.\d{2})?)',  # Rs. 50,000 or Rs. 50,000.00
+                r'PKR\.?\s*(\d+(?:,\d{3})*(?:\.\d{2})?)', # PKR 50,000
+                r'(\d+(?:,\d{3})*)\s*(?:Rs|PKR)',         # 50,000 Rs
+                r'Price:\s*Rs\.?\s*(\d+(?:,\d{3})*)',     # Price: Rs. 50,000
+                r'₨\s*(\d+(?:,\d{3})*)',                  # ₨ 50,000
+                r'(\d{1,3}(?:,\d{3})+)',                  # Any comma-separated number (50,000)
             ]
             
             price_numeric = None
@@ -504,9 +519,14 @@ class AgentB_SerperSearch(Agent):
                 match = re.search(pattern, text_to_search, re.IGNORECASE)
                 if match:
                     try:
-                        price_numeric = int(match.group(1).replace(',', ''))
-                        price_text = f"Rs. {price_numeric:,}"
-                        break
+                        price_str = match.group(1).replace(',', '').replace('.00', '')
+                        price_numeric = int(float(price_str))
+                        # Validate price is reasonable (between 100 and 10,000,000 PKR)
+                        if 100 <= price_numeric <= 10000000:
+                            price_text = f"Rs. {price_numeric:,}"
+                            break
+                        else:
+                            price_numeric = None
                     except:
                         continue
             
