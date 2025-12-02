@@ -14,6 +14,18 @@ import json
 from rich.console import Console
 import plotly.express as px
 
+# Load API keys from Streamlit secrets into environment variables (only on cloud)
+try:
+    if hasattr(st, 'secrets'):
+        for key in ['GROQ_API_KEY', 'SERPER_API_KEY']:
+            try:
+                if key in st.secrets:
+                    os.environ[key] = st.secrets[key]
+            except:
+                pass  # Secrets not configured, will fall back to .env
+except:
+    pass  # Running locally, use .env file
+
 # Install Playwright browsers on first run (for Streamlit Cloud)
 @st.cache_resource
 def install_playwright():

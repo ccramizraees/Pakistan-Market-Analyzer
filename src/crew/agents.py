@@ -32,8 +32,29 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize clients
-groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+# Get API keys from environment or Streamlit secrets
+def get_api_key(key_name):
+    """Get API key from environment or Streamlit secrets"""
+    # Try environment variable first
+    api_key = os.getenv(key_name)
+    if api_key:
+        return api_key
+    
+    # Try Streamlit secrets
+    try:
+        import streamlit as st
+        if hasattr(st, 'secrets') and key_name in st.secrets:
+            return st.secrets[key_name]
+    except:
+        pass
+    
+    return None
+
+# Initialize clients with fallback to Streamlit secrets
+groq_api_key = get_api_key("GROQ_API_KEY")
+if not groq_api_key:
+    raise ValueError("GROQ_API_KEY not found in environment variables or Streamlit secrets")
+groq_client = Groq(api_key=groq_api_key)
 
 
 def groq_api_call_with_retry(client: Groq, messages: List[Dict], model: str = "llama-3.1-8b-instant", max_retries: int = 5, base_delay: float = 1.0):
@@ -352,10 +373,10 @@ class AgentB_SerperSearch(Agent):
     """
     
     def __init__(self):
-        # Check API key before initialization
-        api_key = os.getenv("SERPER_API_KEY")
+        # Check API key before initialization (with Streamlit secrets fallback)
+        api_key = get_api_key("SERPER_API_KEY")
         if not api_key:
-            raise ValueError("SERPER_API_KEY not found in environment variables")
+            raise ValueError("SERPER_API_KEY not found in environment variables or Streamlit secrets")
             
         super().__init__(
             role="Pakistani E-commerce Site Search Agent",
