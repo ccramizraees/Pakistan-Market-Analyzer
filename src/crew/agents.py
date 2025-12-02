@@ -50,11 +50,18 @@ def get_api_key(key_name):
     
     return None
 
-# Initialize clients with fallback to Streamlit secrets
-groq_api_key = get_api_key("GROQ_API_KEY")
-if not groq_api_key:
-    raise ValueError("GROQ_API_KEY not found in environment variables or Streamlit secrets")
-groq_client = Groq(api_key=groq_api_key)
+# Lazy initialization of Groq client
+groq_client = None
+
+def get_groq_client():
+    """Get or initialize Groq client"""
+    global groq_client
+    if groq_client is None:
+        groq_api_key = get_api_key("GROQ_API_KEY")
+        if not groq_api_key:
+            raise ValueError("GROQ_API_KEY not found in environment variables or Streamlit secrets")
+        groq_client = Groq(api_key=groq_api_key)
+    return groq_client
 
 
 def groq_api_call_with_retry(client: Groq, messages: List[Dict], model: str = "llama-3.1-8b-instant", max_retries: int = 5, base_delay: float = 1.0):
@@ -113,7 +120,6 @@ class AgentA_DarazScraper(Agent):
             allow_delegation=False
         )
         # Store as class variables to avoid CrewAI field restrictions
-        AgentA_DarazScraper._groq_client = groq_client
         AgentA_DarazScraper._model = "llama-3.1-8b-instant"
     
     def scrape_daraz_product_sync(self, query: str, index: int = 0, headless: bool = False, 
@@ -561,7 +567,6 @@ class AgentD_ReportGenerator(Agent):
             allow_delegation=False
         )
         # Store as class variables to avoid CrewAI field restrictions
-        AgentD_ReportGenerator._groq_client = groq_client
         AgentD_ReportGenerator._model = "llama-3.1-8b-instant"
     
     @handle_agent_errors
@@ -647,7 +652,7 @@ Generate detailed analysis focusing on Pakistani market conditions, local seller
         
         try:
             response = groq_api_call_with_retry(
-                AgentD_ReportGenerator._groq_client,
+                get_groq_client(),
                 messages,
                 model=AgentD_ReportGenerator._model
             )
