@@ -1,10 +1,11 @@
 #!/bin/bash
+set -e
 
-# Install Playwright dependencies
-playwright install-deps chromium
+echo "Installing Playwright dependencies..."
+playwright install-deps chromium || echo "Warning: Failed to install playwright deps"
 
-# Install Playwright browser
-playwright install chromium
+echo "Installing Playwright browser..."
+playwright install chromium || echo "Warning: Failed to install chromium"
 
-# Start Streamlit
-streamlit run streamlit_app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
+echo "Starting Streamlit..."
+exec streamlit run streamlit_app.py --server.port ${PORT:-8501} --server.address 0.0.0.0 --server.headless true

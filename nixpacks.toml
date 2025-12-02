@@ -1,5 +1,14 @@
-[default]
-location = "/"
+[phases.setup]
+nixPkgs = ["python39", "playwright"]
 
-[default.build]
-entry = "requirements.txt"
+[phases.install]
+cmds = [
+    "pip install -r requirements.txt",
+    "playwright install --with-deps chromium"
+]
+
+[phases.build]
+cmds = ["echo 'Build complete'"]
+
+[start]
+cmd = "streamlit run streamlit_app.py --server.port ${PORT:-8501} --server.address 0.0.0.0 --server.headless true"
