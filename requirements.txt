@@ -1,4 +1,4 @@
-playwright==1.48.0
+# playwright==1.48.0  # Commented out for Railway - causes deployment issues
 crewai[tools]
 groq
 python-dotenv
