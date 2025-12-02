@@ -1,0 +1,47 @@
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.env
+*.env
+*.sqlite3
+*.db
+*.log
+*.bak
+*.tmp
+*.swp
+*.swo
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints
+
+# VSCode
+.vscode/
+
+# PyCharm
+.idea/
+
+# Node
+node_modules/
+
+# Mac
+*.DS_Store
+
+# Windows
+Thumbs.db
+
+# Test/Temp
+*.test.*
+*.tmp
+*.bak
+
+# Streamlit
+.streamlit/
+
+# Data files
+*.json
+data/reports/
+*__init__.py*
