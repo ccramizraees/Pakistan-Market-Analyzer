@@ -206,6 +206,11 @@ def display_price_comparison(results):
         return
     
     results_data = results.get('results', {})
+    
+    # Show warning if only Daraz results (Agent B might have failed)
+    marketplace_count = len(results_data.get('marketplace_products', []))
+    if marketplace_count == 0:
+        st.warning("⚠️ Only Daraz results found. Other platforms search may have failed. Check your SERPER_API_KEY in Railway environment variables.")
 
     
     # Summary metrics in a row with better styling
@@ -254,6 +259,21 @@ def display_price_comparison(results):
             value=formatted_time,
             help=f"Full timestamp: {execution_time}"
         )
+    
+    # Debug expander for troubleshooting
+    with st.expander("🔧 Debug Info (Click if you're not seeing results from all platforms)"):
+        st.write("**Marketplace Products Count:**", len(results_data.get('marketplace_products', [])))
+        st.write("**Daraz Product:**", "Found" if results_data.get('daraz_product') else "Not found")
+        
+        # Show if Agent B failed
+        if 'raw_results' in results:
+            raw = results.get('raw_results', {})
+            task_b = raw.get('task_b_processed', {})
+            if task_b.get('status') == 'failed':
+                st.error(f"❌ Agent B (Serper Search) Failed: {task_b.get('error', 'Unknown error')}")
+                st.info("💡 Make sure SERPER_API_KEY is set in Railway environment variables")
+            elif task_b.get('status') == 'success':
+                st.success(f"✅ Agent B found {task_b.get('results_count', 0)} results")
     
     # Show detailed results
     st.markdown("---")
