@@ -21,7 +21,7 @@ load_dotenv()
 # Load API keys from Streamlit secrets into environment variables (for cloud deployment)
 try:
     if hasattr(st, 'secrets'):
-        for key in ['GROQ_API_KEY', 'SERPER_API_KEY']:
+        for key in ['GROQ_API_KEY', 'SERPER_API_KEY', 'OPENAI_API_KEY']:
             try:
                 # Check if key exists in secrets before accessing
                 secrets_dict = dict(st.secrets)
@@ -31,6 +31,10 @@ try:
                 pass  # Secrets not configured
 except Exception as e:
     pass  # Running locally, use .env file
+
+# Set dummy OpenAI key if not present (CrewAI requires it but we use Groq)
+if not os.getenv("OPENAI_API_KEY"):
+    os.environ["OPENAI_API_KEY"] = "sk-dummy-key-not-used"
 
 # Install Playwright browsers on first run (for Streamlit Cloud)
 @st.cache_resource
