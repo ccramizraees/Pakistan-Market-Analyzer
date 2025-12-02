@@ -13,17 +13,23 @@ from pathlib import Path
 import json
 from rich.console import Console
 import plotly.express as px
+from dotenv import load_dotenv
 
-# Load API keys from Streamlit secrets into environment variables (only on cloud)
+# Load .env file first (for local development)
+load_dotenv()
+
+# Load API keys from Streamlit secrets into environment variables (for cloud deployment)
 try:
     if hasattr(st, 'secrets'):
         for key in ['GROQ_API_KEY', 'SERPER_API_KEY']:
             try:
-                if key in st.secrets:
-                    os.environ[key] = st.secrets[key]
-            except:
-                pass  # Secrets not configured, will fall back to .env
-except:
+                # Check if key exists in secrets before accessing
+                secrets_dict = dict(st.secrets)
+                if key in secrets_dict:
+                    os.environ[key] = str(secrets_dict[key])
+            except Exception as e:
+                pass  # Secrets not configured
+except Exception as e:
     pass  # Running locally, use .env file
 
 # Install Playwright browsers on first run (for Streamlit Cloud)
@@ -42,7 +48,6 @@ def install_playwright():
 install_playwright()
 
 from src.crew.crew import run_clean_marketplace_analysis
-
 # Page config
 st.set_page_config(
     page_title="Pakistani Price Tracker 🛍️",
@@ -516,20 +521,26 @@ def check_api_configuration():
     
     def get_key(key_name):
         """Check both environment and Streamlit secrets"""
+        # First check environment (set from secrets or .env)
         if os.getenv(key_name):
             return True
+        
+        # Then check Streamlit secrets directly
         try:
-            if hasattr(st, 'secrets') and key_name in st.secrets:
-                return True
+            if hasattr(st, 'secrets'):
+                secrets_dict = dict(st.secrets)
+                if key_name in secrets_dict and secrets_dict[key_name]:
+                    return True
         except:
             pass
+        
         return False
     
     # Check Serper API
     if not get_key("SERPER_API_KEY"):
         issues.append("🔑 SERPER_API_KEY not found - Marketplace search will be limited")
     
-    # Check Groq API (if used)
+    # Check Groq API
     if not get_key("GROQ_API_KEY"):
         issues.append("🤖 GROQ_API_KEY not found - AI analysis features may be limited")
     
