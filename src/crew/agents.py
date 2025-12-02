@@ -398,32 +398,42 @@ class AgentB_SerperSearch(Agent):
         """
         logger.info(f"🔍 Agent B: Searching Pakistani sites for: {product_name}")
         
-        # Get API key when actually needed (lazy loading)
-        api_key = get_api_key("SERPER_API_KEY")
-        if not api_key:
-            raise ValueError("SERPER_API_KEY not found in environment variables or Streamlit secrets")
-        
-        base_url = "https://google.serper.dev"
-        headers = {
-            "X-API-KEY": api_key,
-            "Content-Type": "application/json"
-        }
-        
-        # Construct targeted search queries for Pakistani sites
-        search_queries = [
-            f"{product_name} site:priceoye.pk",
-            f"{product_name} site:olx.com.pk",
-            f"{product_name} site:telemart.pk",
-            f"{product_name} site:shophive.pk",
-            f"{product_name} site:daraz.pk",  # Include Daraz via search
-            f"{product_name} price Pakistan buy online",
-            f"buy {product_name} Pakistan online",
-            f"{product_name} Pakistan price comparison"
-        ]
-        
-        all_results = []
-        
-        for query in search_queries:
+        try:
+            # Get API key when actually needed (lazy loading)
+            api_key = get_api_key("SERPER_API_KEY")
+            if not api_key:
+                error_msg = "SERPER_API_KEY not found in environment variables or Streamlit secrets"
+                logger.error(f"❌ Agent B: {error_msg}")
+                return {
+                    "status": "failed",
+                    "error": error_msg,
+                    "results": [],
+                    "results_count": 0
+                }
+            
+            logger.info(f"✅ Agent B: SERPER_API_KEY loaded successfully")
+            
+            base_url = "https://google.serper.dev"
+            headers = {
+                "X-API-KEY": api_key,
+                "Content-Type": "application/json"
+            }
+            
+            # Construct targeted search queries for Pakistani sites
+            search_queries = [
+                f"{product_name} site:priceoye.pk",
+                f"{product_name} site:olx.com.pk",
+                f"{product_name} site:telemart.pk",
+                f"{product_name} site:shophive.pk",
+                f"{product_name} site:daraz.pk",  # Include Daraz via search
+                f"{product_name} price Pakistan buy online",
+                f"buy {product_name} Pakistan online",
+                f"{product_name} Pakistan price comparison"
+            ]
+            
+            all_results = []
+            
+            for query in search_queries:
             try:
                 payload = {
                     "q": query,
@@ -439,6 +449,8 @@ class AgentB_SerperSearch(Agent):
                     json=payload,
                     timeout=30
                 )
+                
+                logger.info(f"📡 Agent B: Serper response status: {response.status_code}")
                 
                 if response.status_code == 200:
                     data = response.json()
@@ -466,6 +478,9 @@ class AgentB_SerperSearch(Agent):
                             processed_product = self._process_search_result(result)
                             if processed_product:
                                 all_results.append(processed_product)
+                                logger.info(f"✅ Agent B: Added result from {processed_product.get('platform', 'unknown')}")
+                else:
+                    logger.error(f"❌ Agent B: Serper API returned status {response.status_code}: {response.text[:200]}")
                 
                 # Small delay between queries
                 time.sleep(0.5)
@@ -487,12 +502,22 @@ class AgentB_SerperSearch(Agent):
         logger.info(f"✅ Agent B: Found {len(unique_results)} unique results from Pakistani sites")
         logger.info(f"📊 Agent B: {sum(1 for r in unique_results if r.get('price_numeric'))} results have prices")
         
-        return {
-            "status": "success",
-            "results": unique_results,
-            "results_count": len(unique_results),
-            "raw_results": all_results  # Keep for debugging
-        }
+            return {
+                "status": "success",
+                "results": unique_results,
+                "results_count": len(unique_results),
+                "raw_results": all_results  # Keep for debugging
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Agent B: Critical error in search_pakistani_sites: {e}")
+            logger.exception("Full traceback:")
+            return {
+                "status": "failed",
+                "error": str(e),
+                "results": [],
+                "results_count": 0
+            }
     
     def _process_search_result(self, result: dict) -> dict:
         """

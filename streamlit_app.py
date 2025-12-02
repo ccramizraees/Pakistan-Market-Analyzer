@@ -212,6 +212,19 @@ def display_price_comparison(results):
     st.write("🔍 DEBUG - Total Products:", results_data.get('total_products_found', 0))
     st.write("🔍 DEBUG - Marketplace Products Count:", len(results_data.get('marketplace_products', [])))
     
+    # Check if there were any errors
+    if results.get('error'):
+        st.error(f"❌ Error during search: {results.get('error')}")
+    
+    # Check raw results for debugging
+    if 'raw_results' in results:
+        raw = results['raw_results']
+        if isinstance(raw, dict):
+            for key, value in raw.items():
+                if isinstance(value, dict) and value.get('error'):
+                    st.warning(f"⚠️ {key}: {value.get('error')}")
+
+    
     # Summary metrics in a row with better styling
     st.subheader("📊 Analysis Summary")
     col1, col2, col3, col4 = st.columns(4)
