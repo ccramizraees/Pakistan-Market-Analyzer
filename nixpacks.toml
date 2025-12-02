@@ -1,0 +1,5 @@
+[default]
+location = "/"
+
+[default.build]
+entry = "requirements.txt"
